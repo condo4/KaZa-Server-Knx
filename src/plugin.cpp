@@ -6,6 +6,6 @@
 
 void KnxPlugin::registerTypes(const char *uri)
 {
-    // @uri xdgutils
+    // @uri org.kazoe.knx
     qmlRegisterType<KnxBus>(uri, 1, 0, "KnxBus");
 }
