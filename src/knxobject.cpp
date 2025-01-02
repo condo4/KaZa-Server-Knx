@@ -94,7 +94,10 @@ void KnxObject::setValue(QVariant newValue) {
 
 void KnxObject::changeValue(QVariant newValue) {
     /* Send KNX WRITE FRAME */
-    emit askWrite(gad(), dpt(), newValue);
+    if(newValue.isNull())
+        emit askRead(gad());
+    else
+        emit askWrite(gad(), dpt(), newValue);
 }
 
 
