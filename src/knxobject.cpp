@@ -225,3 +225,8 @@ void KnxObject::reciveFrame(unsigned char *buffer, int len) {
         }
     }
 }
+
+QVariant KnxObject::rawid() const
+{
+    return m_gad;
+}
