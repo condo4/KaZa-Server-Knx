@@ -3,6 +3,7 @@
 #include <QSocketNotifier>
 #include <QDomDocument>
 #include <QDomElement>
+#include <QEventLoop>
 #include <minizip/unzip.h>
 #include "knxobject.h"
 
@@ -185,6 +186,7 @@ KnxBus::KnxBus(QObject *parent)
 {
     qDebug() << "KNX integration loaded";
     QObject::connect(this, &KnxBus::knxdChanged, this, &KnxBus::_tryConnect, Qt::QueuedConnection);
+    QObject::connect(&m_initializer, &QTimer::timeout, this, &KnxBus::_initialize);
 }
 
 
@@ -335,7 +337,9 @@ void KnxBus::_parseKnxProj() {
                                 quint16 dpt = _datapointTypeToDpt(dptstr);
                                 KnxObject *obj = new KnxObject(id, gad, dpt, this);
                                 m_objects[gad] = obj;
-                                QObject::connect(obj, &KnxObject::askRead, this, &KnxBus::_askRead);
+                                m_notInitialized[gad] = 3;
+                                obj->changeValue(QVariant());
+                                QObject::connect(obj, &KnxObject::askRead, this, &KnxBus::_askRead, Qt::QueuedConnection);
                                 QObject::connect(obj, &KnxObject::askWrite, this, &KnxBus::_askWrite);
                             }
                         }
@@ -347,6 +351,7 @@ void KnxBus::_parseKnxProj() {
         }
         groupRange = groupRange.nextSibling().toElement();
     }
+
 }
 
 quint16 KnxBus::_datapointTypeToDpt(const QString &str) const
@@ -378,6 +383,7 @@ void KnxBus::_tryConnect() {
     m_knxdSocket = EIB_Poll_FD(m_knxd);
     m_knxdClient = new QSocketNotifier(m_knxdSocket, QSocketNotifier::Read);
     QObject::connect(m_knxdClient, &QSocketNotifier::activated, this, &KnxBus::_onKnxdReadyRead, Qt::QueuedConnection);
+    m_initializer.start(2000);
 }
 
 void KnxBus::_onKnxdReadyRead()
@@ -385,6 +391,7 @@ void KnxBus::_onKnxdReadyRead()
     unsigned char buffer[1025];  //data buffer of 1K
     eibaddr_t dest;
     eibaddr_t src;
+
     int len = EIBGetGroup_Src(m_knxd, sizeof(buffer), buffer, &src, &dest);
     if(len < 0)
     {
@@ -409,6 +416,11 @@ void KnxBus::_onKnxdReadyRead()
     }
     if(m_objects.contains(dest))
     {
+        unsigned char cmd = static_cast<unsigned char>(((buffer[0] & 0x03) << 2) | ((buffer[1] & 0xC0) >> 6));
+        if((cmd == KNX_WRITE) | (cmd == KNX_RESPONSE))
+        {
+            m_notInitialized.remove(dest);
+        }
         m_objects[dest]->reciveFrame(buffer, len);
     }
     else
@@ -489,4 +501,28 @@ void KnxBus::_askWrite(quint16 gad, quint16 dpt, QVariant value) {
     {
         qWarning() << "EIBSendGroup error";
     }
+}
+
+void KnxBus::_initialize()
+{
+    QEventLoop wait;
+    QTimer timew;
+    QObject::connect(&timew, &QTimer::timeout, &wait, &QEventLoop::quit);
+    QList<uint16_t> gads = m_notInitialized.keys();
+    for(const uint16_t &gad: std::as_const(gads))
+    {
+        if(m_notInitialized[gad]-- > 0)
+        {
+            _askRead(gad);
+            timew.start(80);
+            wait.exec();
+        }
+        else
+        {
+            qWarning().noquote().nospace() << "No response from " << gadToStr(gad) << " " << m_objects[gad]->name();
+            m_notInitialized.remove(gad);
+        }
+    }
+    if(m_notInitialized.size() == 0)
+        m_initializer.stop();
 }

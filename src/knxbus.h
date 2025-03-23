@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QQmlEngine>
+#include <QTimer>
 #include <cstdbool>
 #include <cstring>
 
@@ -44,8 +45,10 @@ private:
     int m_knxdSocket {0};
     QSocketNotifier *m_knxdClient {nullptr};
     QMap<quint16, KnxObject*> m_objects;
+    QMap<quint16, quint16> m_notInitialized;
     QString m_knxProj;
     QList<uint16_t> m_notmanaged;
+    QTimer m_initializer;
 
     void _parseKnxProj();
     quint16 _datapointTypeToDpt(const QString &str) const;
@@ -55,6 +58,7 @@ private slots:
     void _onKnxdReadyRead();
     void _askRead(quint16 gad);
     void _askWrite(quint16 gad, quint16 dpt, QVariant value);
+    void _initialize();
 };
 
 
