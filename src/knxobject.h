@@ -20,6 +20,7 @@ public:
 
     void reciveFrame(unsigned char *buffer, int len);
 
+    QVariant rawid() const override;
 
 private:
     quint16 m_gad;
