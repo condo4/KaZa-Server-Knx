@@ -183,7 +183,7 @@ inline void encode_dpt225(unsigned char *data, unsigned short time_period, unsig
 KnxBus::KnxBus(QObject *parent)
     : QObject{parent}
 {
-    qDebug() << "Create KnxBus object";
+    qDebug() << "KNX integration loaded";
     QObject::connect(this, &KnxBus::knxdChanged, this, &KnxBus::_tryConnect, Qt::QueuedConnection);
 }
 
@@ -215,7 +215,9 @@ void KnxBus::setKnxProj(const QString &newKnxProj) {
 }
 
 void KnxBus::_parseKnxProj() {
-    qDebug() << "Load" << m_knxProj;
+#ifdef DEBUG
+    qDebug() << "KNX Load" << m_knxProj;
+#endif
     QDomDocument doc;
     unzFile zip = unzOpen64(m_knxProj.toStdString().c_str());
     if (zip == NULL) {
@@ -326,7 +328,7 @@ void KnxBus::_parseKnxProj() {
                             QString dptstr = groupAddress.attribute("DatapointType");
                             if(dptstr.isEmpty())
                             {
-                                qWarning() << "DPT not set for " << id;
+                                qWarning() << "WARNING: DPT not set for " << id;
                             }
                             else
                             {
@@ -364,7 +366,9 @@ quint16 KnxBus::_datapointTypeToDpt(const QString &str) const
 }
 
 void KnxBus::_tryConnect() {
+#ifdef DEBUG
     qInfo() << "Connect to KNXD " << m_knxdUrl.toStdString().c_str();
+#endif
     m_knxd = EIBSocketURL(m_knxdUrl.toStdString().c_str());
     if (EIBOpen_GroupSocket (m_knxd, 0) == -1)
     {

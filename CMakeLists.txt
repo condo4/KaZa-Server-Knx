@@ -26,7 +26,14 @@ find_package(Qt6 6.2 COMPONENTS Quick Xml REQUIRED)
 find_package(KaZa REQUIRED)
 include_directories(${KAZA_INCLUDE_DIR})
 
-add_library(KnxPlugin SHARED src/knxbus.cpp src/knxbus.h src/knxobject.cpp src/knxobject.h src/plugin.cpp src/plugin.h)
+add_library(
+    KnxPlugin
+    SHARED
+    src/knxbus.cpp src/knxbus.h
+    src/knxobject.cpp src/knxobject.h
+    src/plugin.cpp src/plugin.h
+    qmldir
+)
 
 if(NOT DEFINED QML_MODULE_INSTALL_PATH)
     if(EXISTS /usr/lib64/qt6/qml/builtins.qmltypes)
@@ -54,7 +61,7 @@ if(BUILD_DEBIAN_PACKAGE)
     set(CPACK_PACKAGE_NAME "kaza-knx")
     set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
     set(CPACK_PACKAGE_VERSION_PATCH "${CMAKE_PROJECT_VERSION_PATCH}-debian${DEBIAN_MAJOR}")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt6serialbus6 qml6-module-qtqml")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "knxd, kaza-server-bin, libqt6serialbus6, qml6-module-qtqml")
     set(CPACK_PACKAGE_DESCRIPTION "KNX integration for KaZa Server")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Fabien Proriol <fabien.proriol@kazoe.org>")
     include(CPack)
