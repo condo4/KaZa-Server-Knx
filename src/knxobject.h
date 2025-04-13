@@ -16,7 +16,7 @@ public:
 
     QVariant value() const override;
     void setValue(QVariant newValue) override;
-    void changeValue(QVariant) override;
+    void changeValue(QVariant, bool confirm = false) override;
 
     void reciveFrame(unsigned char *buffer, int len);
 

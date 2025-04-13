@@ -1,5 +1,8 @@
 #include "knxobject.h"
 
+#include <QEventLoop>
+#include <QTimer>
+
 #define KNX_READ            (0x00)
 #define KNX_RESPONSE        (0x01)
 #define KNX_WRITE           (0x02)
@@ -92,12 +95,34 @@ void KnxObject::setValue(QVariant newValue) {
     }
 }
 
-void KnxObject::changeValue(QVariant newValue) {
+void KnxObject::changeValue(QVariant newValue, bool confirm) {
     /* Send KNX WRITE FRAME */
-    if(newValue.isNull())
-        emit askRead(gad());
-    else
-        emit askWrite(gad(), dpt(), newValue);
+    emit askWrite(gad(), dpt(), newValue);
+    while(confirm)
+    {
+        QTimer timeout;
+        QEventLoop wait;
+        QObject::connect(&timeout, &QTimer::timeout, &wait, &QEventLoop::quit);
+        QObject::connect(this, &KnxObject::valueChanged, &wait, &QEventLoop::quit);
+        emit askWrite(gad(), dpt(), QVariant());
+        timeout.start(500);
+        wait.exec();
+        if(timeout.remainingTime() == 0)
+        {
+            emit askWrite(gad(), dpt(), QVariant());
+        }
+        else
+        {
+            if(m_value != newValue)
+            {
+                emit askWrite(gad(), dpt(), newValue);
+                emit askWrite(gad(), dpt(), QVariant());
+            }
+            else {
+                break;
+            }
+        }
+    }
 }
 
 
