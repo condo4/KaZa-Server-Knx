@@ -238,6 +238,15 @@ void KnxObject::reciveFrame(unsigned char *buffer, int len) {
                 emit valueChanged();
                 break;
             }
+            default:
+            {
+                static bool first = true;
+                if(first)
+                {
+                    qWarning() << "Not managed type " << dptToStr(m_dpt);
+                    first = false;
+                }
+            }
         }
 #ifdef DEBUG_KNX_FRAME
         qDebug().noquote() << "RECIVE " << ((cmd == KNX_WRITE)?("WRITE"):("RESPONSE")) << " FRAME FOR " << gadToStr(m_gad) << " (" << name() << ") set value to " << m_value;
