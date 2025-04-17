@@ -238,6 +238,18 @@ void KnxObject::reciveFrame(unsigned char *buffer, int len) {
                 emit valueChanged();
                 break;
             }
+            case 20:
+            {
+                if(len < 3)
+                {
+                    qWarning() << "INVALID TELEGRAM " << frameToStr(buffer, len) << "FOR DPT " << dptToStr(m_dpt);
+                    return;
+                }
+                unsigned char d0 = (unsigned char)(buffer[2]);
+                m_value.setValue(d0);
+                emit valueChanged();
+                break;
+            }
             default:
             {
                 static bool first = true;

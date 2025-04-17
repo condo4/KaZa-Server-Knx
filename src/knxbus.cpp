@@ -491,6 +491,14 @@ void KnxBus::_askWrite(quint16 gad, quint16 dpt, QVariant value) {
         encode_dpt9(reinterpret_cast<unsigned char*>(frame.data() + 1), val);
         break;
     }
+    case 20:
+    {
+        frame.push_back(static_cast<char>(0));
+        unsigned char val = value.toUInt();
+        // DPT 20 is 12 Bytes; like dpt5
+        encode_dpt5(reinterpret_cast<unsigned char*>(frame.data() + 1), val);
+        break;
+    }
     default:
     {
         qDebug() << "TODO: NEED TO WRITE OBJECT " << gadToStr(gad) << " (" << dptToStr(dpt) << ")  -> " << value;
